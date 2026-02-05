@@ -1,4 +1,4 @@
-import streamlit as st
+    import streamlit as st
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -88,14 +88,10 @@ if uploaded_file is not None:
     probs = torch.softmax(output, dim=1)[0]
     pred = torch.argmax(probs).item()
     confidence = probs[pred].item() * 100
-
-
 st.success(
     f"🏢 Tahmin Sonucu: **{classes[pred]}** (%{confidence:.1f} güven)"
 )
-
 st.info(
     "⚠️ Bu sistem kesin hasar tespiti yapmaz. "
     "Deprem sonrası hızlı risk ön değerlendirmesi amacıyla geliştirilmiştir."
 )
-
