@@ -89,9 +89,11 @@ if uploaded_file is not None:
     pred = torch.argmax(probs).item()
     confidence = probs[pred].item() * 100
 
+
 st.success(
     f"🏢 Tahmin Sonucu: **{classes[pred]}** (%{confidence:.1f} güven)"
 )
+
 st.info(
     "⚠️ Bu sistem kesin hasar tespiti yapmaz. "
     "Deprem sonrası hızlı risk ön değerlendirmesi amacıyla geliştirilmiştir."
