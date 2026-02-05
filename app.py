@@ -7,31 +7,41 @@ from PIL import Image
 
 st.title("Deprem Sonrası Bina Hasar Tespiti")
 
-# Model yükleme
+# === MODEL YÜKLEME ===
 model = resnet18(pretrained=False)
 model.fc = nn.Linear(model.fc.in_features, 2)
-model.load_state_dict(torch.load("deprem_modeli.pth"))
+model.load_state_dict(torch.load("deprem_modeli.pth", map_location="cpu"))
 model.eval()
 
+# === TRANSFORM ===
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.ToTensor(),
+    transforms.ToTensor()
 ])
 
-uploaded_file = st.file_uploader("Bir bina fotoğrafı yükle", type=["jpg", "png", "jpeg"])
+classes = ["Hasarlı", "Sağlam"]
+
+# === BİNA KONTROLÜ (BASİT AMA ETKİLİ) ===
+def bina_mi(image):
+    # Çok açık / çok karanlık / aşırı düz görüntüler elenir
+    gray = image.convert("L")
+    pixels = list(gray.getdata())
+    std = torch.tensor(pixels, dtype=torch.float).std().item()
+    return std > 15   # eşik (deneysel ama iş görür)
+
+uploaded_file = st.file_uploader("Bir bina fotoğrafı yükleyin", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
-    img = Image.open(uploaded_file)
-    st.image(img, caption="Yüklenen Görüntü", use_container_width=True)
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Yüklenen Fotoğraf", use_container_width=True)
 
-
-    img_tensor = transform(img).unsqueeze(0)
-
-    with torch.no_grad():
-        output = model(img_tensor)
-        pred = torch.argmax(output, dim=1)
-
-    if pred.item() == 0:
-        st.error("🔴 HASARLI BİNA")
+    if not bina_mi(image):
+        st.error("❌ Bina tespit edilemedi. Lütfen bina fotoğrafı yükleyin.")
     else:
-        st.success("🟢 SAĞLAM BİNA")
+        img = transform(image).unsqueeze(0)
+
+        with torch.no_grad():
+            output = model(img)
+            pred = torch.argmax(output, 1).item()
+
+        st.success(f"🏢 Tahmin Sonucu: **{classes[pred]}**")
