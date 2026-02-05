@@ -51,11 +51,12 @@ if uploaded_file is not None:
 
     img = transform(image).unsqueeze(0)
 
-    with torch.no_grad():
+with torch.no_grad():
     output = model(img)
     probs = torch.softmax(output, dim=1)[0]
     pred = torch.argmax(probs).item()
     confidence = probs[pred].item()
+
 
 # 🔴 ENKAZ / KARARSIZLIK FİLTRESİ
 if confidence < 0.75:
