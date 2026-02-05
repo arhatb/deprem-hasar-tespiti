@@ -84,7 +84,16 @@ if uploaded_file is not None:
     img = hasar_transform(image).unsqueeze(0)
 
     with torch.no_grad():
-        output = model(img)
-        pred = torch.argmax(output, 1).item()
+    output = model(img)
+    probs = torch.softmax(output, dim=1)[0]
+    pred = torch.argmax(probs).item()
+    confidence = probs[pred].item() * 100
 
-    st.success(f"🏢 Tahmin Sonucu: **{classes[pred]}**")
+st.success(
+    f"🏢 Tahmin Sonucu: **{classes[pred]}** (%{confidence:.1f} güven)"
+)
+st.info(
+    "⚠️ Bu sistem kesin hasar tespiti yapmaz. "
+    "Deprem sonrası hızlı risk ön değerlendirmesi amacıyla geliştirilmiştir."
+)
+
