@@ -52,14 +52,15 @@ if uploaded_file is not None:
     img = transform(image).unsqueeze(0)
 
     with torch.no_grad():
-        output = model(img)
-        probs = torch.softmax(output, dim=1)
-        pred = torch.argmax(probs, dim=1).item()
-        confidence = probs[0][pred].item()
+    output = model(img)
+    probs = torch.softmax(output, dim=1)[0]
+    pred = torch.argmax(probs).item()
+    confidence = probs[pred].item()
 
-# Emin değilse otomatik riskli say
+# 🔴 ENKAZ / KARARSIZLIK FİLTRESİ
 if confidence < 0.75:
-    pred = 1
+    pred = 1  # yüksek risk
+
 
 if pred == 0:
     st.success(
@@ -71,8 +72,6 @@ else:
         f"🔴 **Yüksek Riskli / Hasarlı Yapı**\n\n"
         f"Güven Skoru: **%{confidence*100:.1f}**"
     )
-
-        
 
     # =====================
     # SONUÇ YORUMLAMA
