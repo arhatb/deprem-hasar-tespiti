@@ -57,6 +57,23 @@ if uploaded_file is not None:
         pred = torch.argmax(probs, dim=1).item()
         confidence = probs[0][pred].item()
 
+# Emin değilse otomatik riskli say
+if confidence < 0.75:
+    pred = 1
+
+if pred == 0:
+    st.success(
+        f"🟢 **Düşük Riskli Yapı**\n\n"
+        f"Güven Skoru: **%{confidence*100:.1f}**"
+    )
+else:
+    st.error(
+        f"🔴 **Yüksek Riskli / Hasarlı Yapı**\n\n"
+        f"Güven Skoru: **%{confidence*100:.1f}**"
+    )
+
+        
+
     # =====================
     # SONUÇ YORUMLAMA
     # =====================
