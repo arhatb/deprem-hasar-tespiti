@@ -46,10 +46,24 @@ def bina_var_mi(image):
     img = imagenet_transform(image).unsqueeze(0)
     with torch.no_grad():
         outputs = building_model(img)
-        _, predicted = outputs.max(1)
+        probs = torch.nn.functional.softmax(outputs, dim=1)
+        top5 = torch.topk(probs, 5)
 
-    bina_siniflari = [497, 498, 499, 500, 663, 664]
-    return predicted.item() in bina_siniflari
+    bina_kelimeleri = [
+        "building", "house", "palace", "church",
+        "mosque", "tower", "apartment", "castle"
+    ]
+
+    labels = models.ResNet18_Weights.DEFAULT.meta["categories"]
+
+    for idx in top5.indices[0]:
+        label = labels[idx]
+        for kelime in bina_kelimeleri:
+            if kelime in label.lower():
+                return True
+
+    return False
+
 
 # =======================
 # ARAYÜZ
