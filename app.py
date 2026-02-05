@@ -37,10 +37,30 @@ transform = transforms.Compose([
 # =====================
 # DOSYA YÜKLEME
 # =====================
-uploaded_file = st.file_uploader(
-    "Bir bina / enkaz fotoğrafı yükleyin",
-    type=["jpg", "jpeg", "png"]
-)
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Yüklenen Fotoğraf", use_container_width=True)
+
+    if not bina_var_mi(image):
+        st.error("❌ Bu fotoğrafta bina / enkaz tespit edilemedi.")
+        st.stop()
+
+    # 👇 img BURADA tanımlanıyor
+    img = hasar_transform(image).unsqueeze(0)
+
+with torch.no_grad():
+        output = model(img)
+        probs = torch.softmax(output, dim=1)[0]
+        pred = torch.argmax(probs).item()
+        confidence = probs[pred].item()
+
+    # düşük güven = yüksek risk
+    if confidence < 0.75:
+        pred = 0  # Hasarlı
+
+    st.success(
+        f"🏢 Tahmin Sonucu: **{classes[pred]}** (%{confidence*100:.1f} güven)"
+    )
 
 # =====================
 # TAHMİN
