@@ -1,9 +1,7 @@
-import streamlit as st
 import torch
-import torchvision.transforms as transforms
-from torchvision.models import resnet18
-from torch import nn
+from torchvision import models, transforms
 from PIL import Image
+
 
 st.title("Deprem Sonrası Bina Hasar Tespiti")
 
@@ -45,3 +43,39 @@ if uploaded_file:
             pred = torch.argmax(output, 1).item()
 
         st.success(f"🏢 Tahmin Sonucu: **{classes[pred]}**")
+
+@st.cache_resource
+def load_building_detector():
+    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+    model.eval()
+    return model
+
+building_model = load_building_detector()
+
+imagenet_transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
+])
+
+def bina_var_mi(image):
+    img = imagenet_transform(image).unsqueeze(0)
+    with torch.no_grad():
+        outputs = building_model(img)
+        _, predicted = outputs.max(1)
+
+    # ImageNet bina benzeri sınıflar
+    bina_siniflari = [
+        497,  # church
+        498,  # palace
+        499,  # monastery
+        500,  # mosque
+        663,  # building
+        664   # house
+    ]
+
+    return predicted.item() in bina_siniflari
+
