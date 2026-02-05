@@ -9,7 +9,15 @@ from PIL import Image
 # =====================
 st.set_page_config(page_title="Deprem Hasar Tespiti", layout="centered")
 st.title("🏚️ Deprem Sonrası Yapı Risk Analizi")
-st.write("Bu sistem **kesin hasar tespiti yapmaz**, hızlı **risk ön değerlendirmesi** sunar.")
+st.write(
+    "Bu sistem **kesin hasar tespiti yapmaz**, "
+    "deprem sonrası **hızlı risk ön değerlendirmesi** sunar."
+)
+
+# =====================
+# SINIFLAR
+# =====================
+classes = ["Yüksek Riskli / Hasarlı", "Düşük Riskli"]
 
 # =====================
 # MODEL YÜKLEME
@@ -17,7 +25,7 @@ st.write("Bu sistem **kesin hasar tespiti yapmaz**, hızlı **risk ön değerlen
 @st.cache_resource
 def load_model():
     model = models.resnet18(pretrained=False)
-    model.fc = nn.Linear(model.fc.in_features, 2)  
+    model.fc = nn.Linear(model.fc.in_features, 2)
     model.load_state_dict(
         torch.load("deprem_modeli.pth", map_location="cpu")
     )
@@ -37,30 +45,10 @@ transform = transforms.Compose([
 # =====================
 # DOSYA YÜKLEME
 # =====================
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Yüklenen Fotoğraf", use_container_width=True)
-
-    if not bina_var_mi(image):
-        st.error("❌ Bu fotoğrafta bina / enkaz tespit edilemedi.")
-        st.stop()
-
-    # 👇 img BURADA tanımlanıyor
-    img = hasar_transform(image).unsqueeze(0)
-
-with torch.no_grad():
-        output = model(img)
-        probs = torch.softmax(output, dim=1)[0]
-        pred = torch.argmax(probs).item()
-        confidence = probs[pred].item()
-
-    # düşük güven = yüksek risk
-    if confidence < 0.75:
-        pred = 0  # Hasarlı
-
-    st.success(
-        f"🏢 Tahmin Sonucu: **{classes[pred]}** (%{confidence*100:.1f} güven)"
-    )
+uploaded_file = st.file_uploader(
+    "Bir bina / enkaz fotoğrafı yükleyin",
+    type=["jpg", "jpeg", "png"]
+)
 
 # =====================
 # TAHMİN
@@ -71,33 +59,20 @@ if uploaded_file is not None:
 
     img = transform(image).unsqueeze(0)
 
-with torch.no_grad():
-    output = model(img)
-    probs = torch.softmax(output, dim=1)[0]
-    pred = torch.argmax(probs).item()
-    confidence = probs[pred].item()
+    with torch.no_grad():
+        output = model(img)
+        probs = torch.softmax(output, dim=1)[0]
+        pred = torch.argmax(probs).item()
+        confidence = probs[pred].item()
 
-
-# 🔴 ENKAZ / KARARSIZLIK FİLTRESİ
-if confidence < 0.75:
-    pred = 1  # yüksek risk
-
-
-if pred == 0:
-    st.success(
-        f"🟢 **Düşük Riskli Yapı**\n\n"
-        f"Güven Skoru: **%{confidence*100:.1f}**"
-    )
-else:
-    st.error(
-        f"🔴 **Yüksek Riskli / Hasarlı Yapı**\n\n"
-        f"Güven Skoru: **%{confidence*100:.1f}**"
-    )
+    # 🔴 GÜVEN DÜŞÜKSE OTOMATİK YÜKSEK RİSK
+    if confidence < 0.75:
+        pred = 0  # Hasarlı
 
     # =====================
-    # SONUÇ YORUMLAMA
+    # SONUÇ
     # =====================
-    if pred == 0:
+    if pred == 1:
         st.success(
             f"🟢 **Düşük Riskli Yapı**\n\n"
             f"Güven Skoru: **%{confidence*100:.1f}**"
@@ -109,6 +84,7 @@ else:
         )
 
     st.info(
-        "ℹ️ Bu sonuç, saha ekipleri için **önceliklendirme amacıyla** üretilmiştir. "
+        "ℹ️ Bu sonuç **kesin hasar tespiti değildir**. "
+        "Saha ekipleri için **önceliklendirme** amacıyla üretilmiştir. "
         "Kesin karar için mühendis incelemesi gereklidir."
     )
