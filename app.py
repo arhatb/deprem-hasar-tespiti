@@ -1,6 +1,11 @@
+import streamlit as st
+
 import torch
+import torch.nn as nn
 from torchvision import models, transforms
+from torchvision.models import resnet18
 from PIL import Image
+
 
 
 st.title("Deprem Sonrası Bina Hasar Tespiti")
