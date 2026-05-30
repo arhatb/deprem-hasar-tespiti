@@ -174,9 +174,10 @@ with tab_tek:
                 "tr": pred_cls, "renk": "#888", "seviye": 0
             })
 
+            renk = info["renk"]
+            isim = info["tr"]
             st.markdown(
-                f"<div class='hasar-badge' style='background:{info[\"renk\"]}'>"
-                f"{info['tr']}</div>",
+                f"<div class='hasar-badge' style='background:{renk}'>{isim}</div>",
                 unsafe_allow_html=True,
             )
 
